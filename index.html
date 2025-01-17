@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shooting Game with utamen</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            color: #fff;
+            text-align: center;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #282c34;
+        }
+
+        .target {
+            width: 40px;
+            height: 40px;
+            background-color: red;
+            border-radius: 50%;
+            position: absolute;
+            transition: all 0.5s ease;
+        }
+
+        .bullet {
+            width: 10px;
+            height: 10px;
+            background-color: yellow;
+            position: absolute;
+            border-radius: 50%;
+        }
+
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 20px;
+        }
+
+        #timer {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="score">Score: 0</div>
+        <div id="timer">Time: 30s</div>
+    </div>
+
+    <script>
+        const gameContainer = document.getElementById('game-container');
+        const scoreDisplay = document.getElementById('score');
+        const timerDisplay = document.getElementById('timer');
+
+        let score = 0;
+        let timeLeft = 30;
+        let gameInterval;
+
+        // Create a target
+        function createTarget() {
+            const target = document.createElement('div');
+            target.classList.add('target');
+
+            const maxX = gameContainer.clientWidth - 40;
+            const maxY = gameContainer.clientHeight - 40;
+
+            const randomX = Math.random() * maxX;
+            const randomY = Math.random() * maxY;
+
+            target.style.left = `${randomX}px`;
+            target.style.top = `${randomY}px`;
+
+            target.addEventListener('click', () => {
+                score++;
+                scoreDisplay.textContent = `Score: ${score}`;
+                target.remove();
+                createTarget();
+            });
+
+            gameContainer.appendChild(target);
+
+            moveTarget(target); // Start AI movement
+        }
+
+        // Move the target to a random location
+        function moveTarget(target) {
+            const moveInterval = setInterval(() => {
+                if (!document.body.contains(target)) {
+                    clearInterval(moveInterval);
+                    return;
+                }
+
+                const maxX = gameContainer.clientWidth - 40;
+                const maxY = gameContainer.clientHeight - 40;
+
+                const randomX = Math.random() * maxX;
+                const randomY = Math.random() * maxY;
+
+                target.style.left = `${randomX}px`;
+                target.style.top = `${randomY}px`;
+            }, 1000); // Move every second
+        }
+
+        // Create a bullet
+        function createBullet(x, y) {
+            const bullet = document.createElement('div');
+            bullet.classList.add('bullet');
+
+            bullet.style.left = `${x}px`;
+            bullet.style.top = `${y}px`;
+
+            gameContainer.appendChild(bullet);
+
+            let interval = setInterval(() => {
+                let bulletTop = parseInt(bullet.style.top);
+                bullet.style.top = `${bulletTop - 10}px`;
+
+                if (bulletTop < 0) {
+                    bullet.remove();
+                    clearInterval(interval);
+                }
+
+                document.querySelectorAll('.target').forEach(target => {
+                    const targetRect = target.getBoundingClientRect();
+                    const bulletRect = bullet.getBoundingClientRect();
+
+                    if (
+                        bulletRect.left < targetRect.right &&
+                        bulletRect.right > targetRect.left &&
+                        bulletRect.top < targetRect.bottom &&
+                        bulletRect.bottom > targetRect.top
+                    ) {
+                        target.remove();
+                        bullet.remove();
+                        clearInterval(interval);
+                        score++;
+                        scoreDisplay.textContent = `Score: ${score}`;
+                        createTarget();
+                    }
+                });
+            }, 20);
+        }
+
+        // Game timer
+        function startTimer() {
+            gameInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = `Time: ${timeLeft}s`;
+
+                if (timeLeft <= 0) {
+                    clearInterval(gameInterval);
+                    alert(`Game over! Your final score is ${score}`);
+                    resetGame();
+                }
+            }, 1000);
+        }
+
+        // Reset game
+        function resetGame() {
+            score = 0;
+            timeLeft = 30;
+            scoreDisplay.textContent = 'Score: 0';
+            timerDisplay.textContent = 'Time: 30s';
+
+            document.querySelectorAll('.target').forEach(target => target.remove());
+            document.querySelectorAll('.bullet').forEach(bullet => bullet.remove());
+
+            createTarget();
+            startTimer();
+        }
+
+        // Start game
+        gameContainer.addEventListener('click', (e) => {
+            const bulletX = e.clientX;
+            const bulletY = e.clientY;
+            createBullet(bulletX, bulletY);
+        });
+
+        createTarget();
+        startTimer();
+    </script>
+</body>
+</html>
